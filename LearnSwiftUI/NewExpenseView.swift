@@ -11,9 +11,9 @@ struct NewExpenseView: View {
   
   @Environment(\.managedObjectContext) private var viewContext
   
-  @Binding var isShown:Bool
+  @Binding var isShown: Bool
   
-  @State private var amount = String()
+  @State private var amount: Double? = nil
   @State private var dateSelection = Date()
   @State private var selectedCategory: Category? = nil
   
@@ -24,11 +24,12 @@ struct NewExpenseView: View {
   
     var body: some View {
       NavigationStack {
-        Form {
-        
+        Form {        
           Section {
             DatePicker("Date", selection: $dateSelection, displayedComponents: [.date])
-            TextField("Amount", text: $amount).keyboardType(.decimalPad)
+            
+            TextField("Amount", value: $amount, format: .number).keyboardType(.decimalPad)
+                        
             if !categories.isEmpty {
               Picker("Category", selection: $selectedCategory) {
                 ForEach(categories) { category in
@@ -40,20 +41,23 @@ struct NewExpenseView: View {
                 }
               }
             } else {
-              Text("No categories added yet")
+              Label("Missing categories", systemImage: "info.circle").foregroundColor(.red)
             }
           }
-        }.navigationBarTitle("Expense",displayMode: .inline).toolbar{
+        }.scrollDismissesKeyboard(.interactively)
+          .navigationBarTitle("New", displayMode: .inline)
+          .toolbar{
           ToolbarItem(placement: .navigationBarLeading) {
             Button("Cancel") {
               isShown = false
             }
           }
+          
           ToolbarItem {
-            Button("Done"){
+            Button("Save") {
               saveExpense()
               isShown = false
-            }.disabled(amount.isEmpty || selectedCategory == nil)
+            }.disabled(amount == nil || selectedCategory == nil)
           }
         }
       }
@@ -63,7 +67,10 @@ struct NewExpenseView: View {
   private func saveExpense() {
     let newExpense = Expense(context: viewContext)
     newExpense.timestamp = dateSelection
-    newExpense.amount = Double(amount) ?? 0.0
+    guard let enteredAmount = amount else {
+      return
+    }
+    newExpense.amount = enteredAmount
     newExpense.category = selectedCategory
     
     guard let selCat =  selectedCategory else {

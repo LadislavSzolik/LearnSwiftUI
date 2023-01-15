@@ -13,7 +13,7 @@ struct LearnSwiftUIApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+            .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext).tint(.teal)
         }
     }
 }

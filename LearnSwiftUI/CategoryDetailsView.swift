@@ -8,28 +8,51 @@
 import SwiftUI
 
 struct CategoryDetailsView: View {
-  @Binding var isShown:Bool
+  
   @Environment(\.managedObjectContext) private var viewContext
+  
+  @FetchRequest(
+    sortDescriptors: [NSSortDescriptor(keyPath: \Category.name, ascending: true) ],
+      animation: .default)
+  private var categories: FetchedResults<Category>
+  
+  @State private var showAddCategory: Bool = false
   
   @State private var newCategoryName = String()
     var body: some View {
-      NavigationStack {
-        Form {
-          TextField("Name", text: $newCategoryName).autocorrectionDisabled(true)
-        }.toolbar{
-          ToolbarItem(placement: .navigationBarLeading) {
-            Button("Cancel") {
-              isShown = false
+    
+        List {
+          ForEach(categories) { cat in
+            Text(cat.name!)
+          }.onDelete(perform: deleteCategory)
+        }.navigationTitle("Categories").navigationBarTitleDisplayMode(.inline)
+        HStack {
+          Button("Add category") {
+            showAddCategory.toggle()
+          }.bold().sheet(isPresented: $showAddCategory) {
+            NavigationStack {
+              Form {
+                Section {
+                  TextField("Category name", text: $newCategoryName).autocorrectionDisabled(true)
+                }.navigationBarTitle("New category", displayMode: .inline ).toolbar {
+                  ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                      showAddCategory.toggle()
+                    }
+                  }
+                  ToolbarItem {
+                    Button("Save"){
+                      saveCategory()
+                      showAddCategory.toggle()
+                    }.disabled(newCategoryName.isEmpty)
+                  }
+                }
+              }
             }
           }
-          ToolbarItem {
-            Button("Done"){
-              saveCategory()
-              isShown = false
-            }.disabled(newCategoryName.isEmpty)
-          }
-        }
-      }
+          Spacer()
+        }.padding()
+      
     }
   
   private func saveCategory() {
@@ -45,8 +68,37 @@ struct CategoryDetailsView: View {
   }
 }
 
+// MARK: Delete category
+
+extension CategoryDetailsView {
+  private func deleteCategory(offsets: IndexSet) {
+      withAnimation {
+          offsets.map { categories[$0] }.forEach(viewContext.delete)
+          do {
+              try viewContext.save()
+          } catch {
+              let nsError = error as NSError
+              print("Error in DeleteItem: \(nsError), \(nsError.userInfo)")
+          }
+      }
+  }
+}
+
+
 struct CategoryDetailsView_Previews: PreviewProvider {
     static var previews: some View {
-      CategoryDetailsView(isShown: Binding.constant(true)).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+      CategoryDetailsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }
+
+
+/*
+ Form {
+   HStack {
+     TextField("Category name", text: $newCategoryName).autocorrectionDisabled(true)
+     Button("Save"){
+       saveCategory()
+     }.disabled(newCategoryName.isEmpty)
+   }
+ }
+ */

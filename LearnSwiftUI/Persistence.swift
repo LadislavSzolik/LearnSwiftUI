@@ -13,18 +13,49 @@ struct PersistenceController {
     static var preview: PersistenceController = {
       let result = PersistenceController(inMemory: true)
       let viewContext = result.container.viewContext
+      let cat1 = Category(context: viewContext)
+      cat1.id = UUID()
+      cat1.name = "Food delivery"
       
-      let category = Category(context: viewContext)
-      category.id = UUID()
-      category.name = "Food delivery"
-        for _ in 0..<5 {
-            let newItem = Expense(context: viewContext)
-          
-            newItem.timestamp = Date()
-          newItem.amount = 44.3
-          newItem.category = category
-          category.addToExpenses(newItem)
-        }
+      let cat2 = Category(context: viewContext)
+      cat2.id = UUID()
+      cat2.name = "Clothes"
+      
+      
+      let cat3 = Category(context: viewContext)
+      cat3.id = UUID()
+      cat3.name = "Petrol"
+      
+      
+      let item1 = Expense(context: viewContext)
+      item1.timestamp = Date().addingTimeInterval(24000)
+      item1.amount = 322.0
+      item1.category = cat1
+      cat1.addToExpenses(item1)
+      
+      
+      let item2 = Expense(context: viewContext)
+      item2.timestamp = Date().addingTimeInterval(20004000)
+      item2.amount = 352.0
+      item2.category = cat1
+      cat1.addToExpenses(item2)
+      
+      
+      let item3 = Expense(context: viewContext)
+      item3.timestamp = Date().addingTimeInterval(20004000)
+      item3.amount = 352.0
+      item3.category = cat2
+      cat2.addToExpenses(item3)
+      
+      
+      for t in 0..<100 {
+        let item = Expense(context: viewContext)
+        item.timestamp = Calendar.current.date(byAdding: DateComponents(month: -t), to: Date())        
+        item.amount = 352.0
+        item.category = cat2
+        cat2.addToExpenses(item)
+      }
+    
         do {
             try viewContext.save()
         } catch {
@@ -39,7 +70,8 @@ struct PersistenceController {
     let container: NSPersistentContainer
 
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "LearnSwiftUI")
+      
+      container = NSPersistentContainer(name: "LearnSwiftUI")
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
@@ -60,5 +92,8 @@ struct PersistenceController {
             }
         })
         container.viewContext.automaticallyMergesChangesFromParent = true
+      
     }
+  
+  
 }
